@@ -1,0 +1,14 @@
+# Ambiente Python
+venv/
+__pycache__/
+*.pyc
+
+# Variaves de ambiente / credenciais
+.env
+
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
+#Intellij
+.idea/
+*.iml
