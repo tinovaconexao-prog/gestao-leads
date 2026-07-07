@@ -1,8 +1,10 @@
 CREATE TABLE operadores
 (
-    id        SERIAL PRIMARY KEY,    -- gera o id do operador
+    id        SERIAL PRIMARY KEY,
     nome      VARCHAR(100) NOT NULL,
-    ativo     BOOLEAN   DEFAULT TRUE,-- se um op sair da empresa apenas marca ele como false .
+    perfil    VARCHAR(20) NOT NULL DEFAULT 'Operador'
+        CHECK (perfil IN ('Operador', 'Supervisor')),
+    ativo     BOOLEAN   DEFAULT TRUE,
     criado_em TIMESTAMP DEFAULT NOW()
 );
 
