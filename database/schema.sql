@@ -2,10 +2,10 @@ CREATE TABLE operadores
 (
     id        SERIAL PRIMARY KEY,
     nome      VARCHAR(100) NOT NULL,
-    perfil    VARCHAR(20) NOT NULL DEFAULT 'Operador'
+    perfil    VARCHAR(20)  NOT NULL DEFAULT 'Operador'
         CHECK (perfil IN ('Operador', 'Supervisor')),
-    ativo     BOOLEAN   DEFAULT TRUE,
-    criado_em TIMESTAMP DEFAULT NOW()
+    ativo     BOOLEAN               DEFAULT TRUE,
+    criado_em TIMESTAMP             DEFAULT NOW()
 );
 
 CREATE TABLE planos
@@ -44,30 +44,31 @@ CREATE TABLE leads
 
 CREATE TABLE historico_status -- guarda a informação que o caminho lead percorreu
 (
-    id SERIAL PRIMARY KEY,
-    lead_id INTEGER REFERENCES leads(id),
-    status_anterior VARCHAR (30),
-    status_novo VARCHAR(30) NOT NULL,
-    operador_id INTEGER REFERENCES operadores(id),
-    data_mudanca TIMESTAMP DEFAULT NOW()
+    id              SERIAL PRIMARY KEY,
+    lead_id         INTEGER REFERENCES leads (id),
+    status_anterior VARCHAR(30),
+    status_novo     VARCHAR(30) NOT NULL,
+    operador_id     INTEGER REFERENCES operadores (id),
+    data_mudanca    TIMESTAMP DEFAULT NOW()
     --Sem esse histórico, você perde a informação de
     -- todo o caminho que o lead percorreu
     -- (quando saiu de "Não disparado" pra "Em negociação", quando virou "Vendido").
     -- É essa tabela que vai permitir você calcular, por exemplo, "tempo médio até fechar venda
 );
-CREATE INDEX idx_historico_lead ON historico_status(lead_id);
+CREATE INDEX idx_historico_lead ON historico_status (lead_id);
 
-CREATE TABLE agenda_retornos(
-                                id SERIAL PRIMARY KEY,
-                                lead_id INTEGER REFERENCES leads(id),
-                                operador_id INTEGER REFERENCES operadores(id),
-                                data_agendamento TIMESTAMP NOT NULL,
-                                tipo_retorno VARCHAR(20) CHECK (tipo_retorno IN ('Ligacao','WhatsApp')),
-                                status_agendamento VARCHAR(20) NOT NULL DEFAULT 'Pendente'
-                                    CHECK ( status_agendamento IN ('Pendente','Concluido','Remarcado','Perdido')),
-                                observacao TEXT,
-                                criado_em TIMESTAMP DEFAULT NOW()
+CREATE TABLE agenda_retornos
+(
+    id                 SERIAL PRIMARY KEY,
+    lead_id            INTEGER REFERENCES leads (id),
+    operador_id        INTEGER REFERENCES operadores (id),
+    data_agendamento   TIMESTAMP   NOT NULL,
+    tipo_retorno       VARCHAR(20) CHECK (tipo_retorno IN ('Ligacao', 'WhatsApp')),
+    status_agendamento VARCHAR(20) NOT NULL DEFAULT 'Pendente'
+        CHECK ( status_agendamento IN ('Pendente', 'Concluido', 'Remarcado', 'Perdido')),
+    observacao         TEXT,
+    criado_em          TIMESTAMP            DEFAULT NOW()
 );
 
-CREATE INDEX idx_agenda_operador ON agenda_retornos(operador_id);
-CREATE INDEX idx_agenda_data ON agenda_retornos(data_agendamento);
+CREATE INDEX idx_agenda_operador ON agenda_retornos (operador_id);
+CREATE INDEX idx_agenda_data ON agenda_retornos (data_agendamento);
