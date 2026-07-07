@@ -13,16 +13,23 @@ Guia de execução do projeto, do zero até produção. Siga na ordem — cada f
 
 ---
 
-## Fase 1 — Modelagem e criação do banco de dados ✅ quase concluída
+## Fase 1 — Modelagem e criação do banco de dados ⚠️ schema.sql atualizado, banco ainda não migrado
 
-- [x] Schema definido com 6 tabelas: `operadores`, `planos`, `lotes_extracao`, `leads`, `historico_status`, `agenda_retornos`
+- [x] Schema definido com 7 tabelas: `operadores`, `planos`, `base_cnpjs`, `lotes_extracao`, `leads`, `historico_status`, `agenda_retornos`
 - [x] Campo `perfil` adicionado em `operadores` (`Operador` / `Supervisor`) — permite diferenciar acesso sem precisar de tabela separada de supervisão
-- [x] Índices criados: `idx_leads_cnpj`, `idx_leads_status`, `idx_leads_operador`, `idx_historico_lead`, `idx_agenda_operador`, `idx_agenda_data`
+- [x] **Nova tabela `base_cnpjs`** — catálogo de CNPJs disponíveis para prospecção (cnpj, razão social, telefone, UF, cidade, tipo de oferta disponível). Separa dado cadastral de dado comercial: `leads` guarda status/histórico, `base_cnpjs` guarda quem é o CNPJ.
+- [x] `leads.cnpj` ganhou FK apontando pra `base_cnpjs(cnpj)` — garante que nenhum lead referencia CNPJ inexistente na base
+- [x] `view_leads_operador` criada — isola a interface do operador do restante das colunas de segmentação de `base_cnpjs` (expõe só cnpj, razão social, telefone e dados do lead)
+- [x] Índices criados: `idx_leads_cnpj`, `idx_leads_status`, `idx_leads_operador`, `idx_historico_lead`, `idx_agenda_operador`, `idx_agenda_data`, `idx_base_uf`, `idx_base_cidade`, `idx_base_tipo_oferta`
 - [x] Constraints de integridade (foreign keys, `CHECK`, `NOT NULL`)
-- [x] `schema.sql` escrito, versionado no Git e sincronizado com o banco real
-- [x] Popular tabela `planos` com os planos reais de Móvel e Fibra
-- [x] Popular tabela `operadores` com os operadores/supervisores atuais
-- [ ] **Decisão em aberto:** adicionar `razao_social` e `telefone` na tabela `leads`?
+- [x] `schema.sql` atualizado no Git com o novo desenho (`base_cnpjs` + FK + view)
+- [x] **Decisão resolvida:** `razao_social` e `telefone` existem, mas ficam em `base_cnpjs`, não em `leads` — acessados via `view_leads_operador`
+- [ ] **Banco Postgres ainda não migrado** — o `schema.sql` já reflete o novo design, mas o banco local ainda está na versão anterior (sem `base_cnpjs`). Próximo passo: `DROP` + recriar.
+- [ ] Popular tabela `planos` com os planos reais de Móvel e Fibra
+- [ ] Popular tabela `operadores` com os operadores/supervisores atuais
+- [ ] Popular `base_cnpjs` com CNPJs de teste (necessário antes de inserir qualquer `leads`, já que agora há FK)
+- [ ] **Decisão em aberto:** carga de `base_cnpjs` é periódica (upsert por cnpj) ou estática/única?
+- [ ] **Decisão em aberto:** reabordagem de CNPJ recusado — existe quarentena antes de nova tentativa, ou nunca mais tentar?
 - [ ] **Decisão em aberto:** criar tabela `resultado_discador` agora ou só na fase de integração com o discador?
 
 **Schema atual (referência rápida):**
@@ -30,12 +37,14 @@ Guia de execução do projeto, do zero até produção. Siga na ordem — cada f
 ```sql
 operadores (id, nome, perfil, ativo, criado_em)
 planos (id, nome_plano, tipo_oferta, ativo)
+base_cnpjs (cnpj PK, razao_social, telefone, uf, cidade, tipo_oferta_disp, ativo, atualizado_em)
 lotes_extracao (id_lote, data_extracao, tipo_oferta, origem_filtro, qtd_cnpjs, criado_por)
-leads (id, cnpj, id_lote, tipo_oferta, operador_id, canal, status, plano_id,
+leads (id, cnpj FK->base_cnpjs, id_lote, tipo_oferta, operador_id, canal, status, plano_id,
        data_disparo, data_ultima_atualizacao, observacao)
 historico_status (id, lead_id, status_anterior, status_novo, operador_id, data_mudanca)
 agenda_retornos (id, lead_id, operador_id, data_agendamento, tipo_retorno,
                  status_agendamento, observacao, criado_em)
+view_leads_operador (join entre leads e base_cnpjs, usada pela interface do operador)
 ```
 
 **Como a atribuição do supervisor pro operador funciona:** `leads.operador_id` aceita `NULL` — o lead nasce sem dono, e o supervisor "envia" a lista fazendo um `UPDATE` nesse campo (via interface, mais pra frente). Nenhuma tabela nova é necessária pra isso.
@@ -46,14 +55,20 @@ agenda_retornos (id, lead_id, operador_id, data_agendamento, tipo_retorno,
 
 ## Fase 2 — Pipeline de entrada de dados (ETL) — não iniciada
 
-Você já tem ferramentas de tratamento de dados — aqui é sobre conectar o resultado delas ao banco.
+Você já tem ferramentas de tratamento de dados — aqui é sobre conectar o resultado delas ao banco. Com a chegada de `base_cnpjs`, o pipeline ganhou uma etapa a mais: agora existem dois fluxos de carga (a base e os lotes/leads).
 
+- [ ] Escrever/adaptar rotina de carga de `base_cnpjs` (upsert por `cnpj`, se a decisão for carga periódica)
 - [ ] Adaptar seu processo atual de tratamento para gerar a saída no formato das tabelas `lotes_extracao` e `leads`
 - [ ] Escrever script Python que:
-  - Lê os dados já tratados
-  - Gera automaticamente o `id_lote`
+  - Filtra `base_cnpjs` pelo critério do lote (uf, cidade, tipo_oferta_disp)
+  - Aplica a regra de deduplicação contra `leads` (ver regra abaixo) antes de inserir
+  - Gera automaticamente o `id_lote`, com `origem_filtro` descrevendo o critério usado
   - Insere no banco via SQLAlchemy/psycopg2
-- [ ] Definir regra de deduplicação: o que fazer se um CNPJ já existente for extraído de novo (novo lead, ou atualiza o existente?)
+- [ ] **Regra de deduplicação definida:**
+  - CNPJ não existe em `leads` → insere normalmente
+  - CNPJ existe e está `Vendido` → não disparar de novo (salvo regra futura de renovação/upsell)
+  - CNPJ existe e está `Recusado` → decisão pendente (ver tabela de decisões abaixo)
+  - CNPJ existe e está `Em negociacao` ou `Disparado sem retorno` → não recriar lead, no máximo atualizar `data_ultima_atualizacao`
 - [ ] Testar o pipeline com uma carga pequena (ex: 50 CNPJs) antes de rodar com volume real
 - [ ] Testar com volume real (milhares de CNPJs) e medir tempo de execução
 
@@ -63,7 +78,7 @@ Você já tem ferramentas de tratamento de dados — aqui é sobre conectar o re
 
 ## Fase 3 — Interface dos operadores — não iniciada
 
-- [ ] Prototipar tela em Streamlit: login simples → lista de leads atribuídos ao operador logado
+- [ ] Prototipar tela em Streamlit: login simples → lista de leads atribuídos ao operador logado, consultando **`view_leads_operador`** (nunca `base_cnpjs` diretamente)
 - [ ] Implementar atualização de status (dropdown com opções fixas, não texto livre)
 - [ ] Implementar campo de plano vendido (dropdown filtrado por `tipo_oferta` do lead)
 - [ ] Implementar a agenda de retornos:
@@ -113,12 +128,14 @@ Você já tem ferramentas de tratamento de dados — aqui é sobre conectar o re
 
 | Tema | Decisão pendente |
 |---|---|
-| Dados de contato em `leads` | Incluir `razao_social` e `telefone`, ou manter só CNPJ? |
+| Dados de contato | ✅ Resolvido — `razao_social` e `telefone` ficam em `base_cnpjs`, acessados via `view_leads_operador` |
+| Atualização de `base_cnpjs` | Carga periódica (upsert por cnpj) ou base estática/única? |
+| Reabordagem de CNPJ recusado | Existe quarentena antes de nova tentativa, ou nunca mais tentar? |
 | Resultado do discador | Tabela `resultado_discador` separada ou atualizar `leads`/`historico_status` direto? |
 | Hospedagem do banco | Continua local, ou migra para nuvem/servidor da empresa em produção? |
 | Autenticação dos operadores | Login simples (usuário/senha) ou algo mais robusto? |
 | Distribuição de leads | Manual pelo supervisor ou regra automática? |
-| Backup | Frequência e local de armazenamento |
+| Backup | Frequência e local de armazenamento (agora cobrindo também `base_cnpjs`) |
 | Concorrência | Quantos operadores vão usar simultaneamente (dimensiona o servidor) |
 
 ---
