@@ -20,8 +20,8 @@ Guia de execução do projeto, do zero até produção. Siga na ordem — cada f
 - [x] Índices criados: `idx_leads_cnpj`, `idx_leads_status`, `idx_leads_operador`, `idx_historico_lead`, `idx_agenda_operador`, `idx_agenda_data`
 - [x] Constraints de integridade (foreign keys, `CHECK`, `NOT NULL`)
 - [x] `schema.sql` escrito, versionado no Git e sincronizado com o banco real
-- [ ] Popular tabela `planos` com os planos reais de Móvel e Fibra
-- [ ] Popular tabela `operadores` com os operadores/supervisores atuais
+- [x] Popular tabela `planos` com os planos reais de Móvel e Fibra
+- [x] Popular tabela `operadores` com os operadores/supervisores atuais
 - [ ] **Decisão em aberto:** adicionar `razao_social` e `telefone` na tabela `leads`?
 - [ ] **Decisão em aberto:** criar tabela `resultado_discador` agora ou só na fase de integração com o discador?
 

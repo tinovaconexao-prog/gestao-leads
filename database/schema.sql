@@ -29,16 +29,18 @@ CREATE TABLE lotes_extracao
 CREATE TABLE leads
 (
     id                      SERIAL PRIMARY KEY,
-    cnpj                    VARCHAR(14) NOT NULL,
+    cnpj                    VARCHAR(14)  NOT NULL,
+    razao_social            VARCHAR(255) NOT NULL,
+    telefone                VARCHAR(20),
     id_lote                 INTEGER REFERENCES lotes_extracao (id_lote),
-    tipo_oferta             VARCHAR(10) NOT NULL CHECK ( tipo_oferta IN ('Movel', 'Fibra')),
+    tipo_oferta             VARCHAR(10)  NOT NULL CHECK ( tipo_oferta IN ('Movel', 'Fibra')),
     operador_id             INTEGER REFERENCES operadores (id),
     canal                   VARCHAR(20) CHECK ( canal IN ('WhatsApp', 'Discador', 'Ambos')),
-    status                  VARCHAR(30) NOT NULL DEFAULT 'Nao disparado'
+    status                  VARCHAR(30)  NOT NULL DEFAULT 'Nao disparado'
         CHECK ( status IN ('Nao disparado', 'Disparado sem retorno', 'Em negociacao', 'Vendido', 'Recusado')),
     plano_id                INTEGER REFERENCES planos (id),
     data_disparo            TIMESTAMP,
-    data_ultima_atualizacao TIMESTAMP            DEFAULT NOW(),
+    data_ultima_atualizacao TIMESTAMP             DEFAULT NOW(),
     observacao              TEXT
 );
 
