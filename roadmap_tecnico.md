@@ -24,9 +24,9 @@ Guia de execução do projeto, do zero até produção. Siga na ordem — cada f
 - [x] Constraints de integridade (foreign keys, `CHECK`, `NOT NULL`)
 - [x] `schema.sql` atualizado no Git com o novo desenho (`base_cnpjs` + FK + view)
 - [x] **Decisão resolvida:** `razao_social` e `telefone` existem, mas ficam em `base_cnpjs`, não em `leads` — acessados via `view_leads_operador`
-- [ ] **Banco Postgres ainda não migrado** — o `schema.sql` já reflete o novo design, mas o banco local ainda está na versão anterior (sem `base_cnpjs`). Próximo passo: `DROP` + recriar.
-- [ ] Popular tabela `planos` com os planos reais de Móvel e Fibra
-- [ ] Popular tabela `operadores` com os operadores/supervisores atuais
+- [x] **Banco Postgres ainda não migrado** — o `schema.sql` já reflete o novo design, mas o banco local ainda está na versão anterior (sem `base_cnpjs`). Próximo passo: `DROP` + recriar.
+- [x] Popular tabela `planos` com os planos reais de Móvel e Fibra
+- [x] Popular tabela `operadores` com os operadores/supervisores atuais
 - [ ] Popular `base_cnpjs` com CNPJs de teste (necessário antes de inserir qualquer `leads`, já que agora há FK)
 - [ ] **Decisão em aberto:** carga de `base_cnpjs` é periódica (upsert por cnpj) ou estática/única?
 - [ ] **Decisão em aberto:** reabordagem de CNPJ recusado — existe quarentena antes de nova tentativa, ou nunca mais tentar?
