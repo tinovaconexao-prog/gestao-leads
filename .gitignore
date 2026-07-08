@@ -12,3 +12,6 @@ Thumbs.db
 #Intellij
 .idea/
 *.iml
+
+#pasta dados
+etl/dados
