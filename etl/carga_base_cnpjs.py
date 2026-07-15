@@ -5,8 +5,18 @@ from sqlalchemy import text
 from conexao import get_engine
 
 
-PASTA_DADOS = "dados"
+import os
 
+import os
+
+# Caminho absoluto da pasta onde ESTE script está (C:\Users\T.I\Projetos\gestao-leads\etl)
+DIRETORIO_DO_SCRIPT = os.path.dirname(os.path.abspath(__file__))
+
+# Subir um nível para ir para a raiz do projeto (C:\Users\T.I\Projetos\gestao-leads)
+RAIZ_DO_PROJETO = os.path.dirname(DIRETORIO_DO_SCRIPT)
+
+# Agora sim, aponta para a pasta 'dados' que está fora do etl
+PASTA_DADOS = os.path.join(RAIZ_DO_PROJETO, 'dados')
 
 def listar_csvs(pasta):
     # pega todos os arquivos .csv dentro da pasta, em ordem alfabética

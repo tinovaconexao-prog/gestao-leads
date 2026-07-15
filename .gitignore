@@ -14,4 +14,5 @@ Thumbs.db
 *.iml
 
 #pasta dados
-etl/dados
+dados
+/dados
