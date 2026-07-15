@@ -25,19 +25,20 @@ CREATE TABLE planos
 
 CREATE TABLE base_cnpjs
 (
-    cnpj             VARCHAR(14) PRIMARY KEY,
-    razao_social     VARCHAR(200),
-    telefone         VARCHAR(20),
-    uf               CHAR(2),
-    cidade           VARCHAR(100),
-    tipo_oferta_disp VARCHAR(10) CHECK (tipo_oferta_disp IN ('Movel', 'Fibra', 'Ambos')),
-    ativo            BOOLEAN   DEFAULT TRUE,
-    atualizado_em    TIMESTAMP DEFAULT NOW()
+    cnpj                VARCHAR(14) PRIMARY KEY,
+    razao_social        VARCHAR(200),
+    telefone            VARCHAR(20),
+    uf                  CHAR(2),
+    cidade              VARCHAR(100),
+    tem_cobertura_fibra BOOLEAN DEFAULT FALSE,
+    produto_ativo       BOOLEAN DEFAULT FALSE,
+    ativo               BOOLEAN   DEFAULT TRUE,
+    atualizado_em       TIMESTAMP DEFAULT NOW()
 );
 
 CREATE INDEX idx_base_uf          ON base_cnpjs (uf);
 CREATE INDEX idx_base_cidade      ON base_cnpjs (cidade);
-CREATE INDEX idx_base_tipo_oferta ON base_cnpjs (tipo_oferta_disp);
+CREATE INDEX idx_base_tipo_oferta ON base_cnpjs (tem_cobertura_fibra);
 
 CREATE TABLE lotes_extracao
 (

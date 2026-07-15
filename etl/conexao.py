@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from six import print_
+
 from sqlalchemy import create_engine
 
 # Carrega as variaveis do arquivo .env para o ambiente

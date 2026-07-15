@@ -7,7 +7,6 @@ from conexao import get_engine
 
 import os
 
-import os
 
 # Caminho absoluto da pasta onde ESTE script está (C:\Users\T.I\Projetos\gestao-leads\etl)
 DIRETORIO_DO_SCRIPT = os.path.dirname(os.path.abspath(__file__))
@@ -67,7 +66,8 @@ def transformar(df):
     saida["telefone"] = df.apply(lambda linha: limpar_telefone(linha["Telefone 1"], linha["Telefone 2"]), axis=1)
     saida["uf"] = df["UF"].str.strip()
     saida["cidade"] = df["Cidade"].str.strip()
-    saida["tipo_oferta_disp"] = "Movel"
+    saida["tem_cobertura_fibra"] = False
+    saida["produto_ativo"] = False
     saida["ativo"] = True
 
     # 1. REMOVE LINHAS ONDE O CNPJ FICOU VAZIO
@@ -86,16 +86,17 @@ def transformar(df):
 
 
 SQL_UPSERT = text("""
-                  INSERT INTO base_cnpjs (cnpj, razao_social, telefone, uf, cidade, tipo_oferta_disp, ativo, atualizado_em)
-                  VALUES (:cnpj, :razao_social, :telefone, :uf, :cidade, :tipo_oferta_disp, :ativo, NOW())
+                  INSERT INTO base_cnpjs (cnpj, razao_social, telefone, uf, cidade, tem_cobertura_fibra, produto_ativo, ativo, atualizado_em)
+                  VALUES (:cnpj, :razao_social, :telefone, :uf, :cidade, :tem_cobertura_fibra, :produto_ativo, :ativo, NOW())
                       ON CONFLICT (cnpj) DO UPDATE SET
-                      razao_social      = EXCLUDED.razao_social,
-                                                telefone          = EXCLUDED.telefone,
-                                                uf                = EXCLUDED.uf,
-                                                cidade            = EXCLUDED.cidade,
-                                                tipo_oferta_disp  = EXCLUDED.tipo_oferta_disp,
-                                                ativo             = EXCLUDED.ativo,
-                                                atualizado_em     = NOW()
+                      razao_social         = EXCLUDED.razao_social,
+                                                telefone             = EXCLUDED.telefone,
+                                                uf                   = EXCLUDED.uf,
+                                                cidade               = EXCLUDED.cidade,
+                                                tem_cobertura_fibra  = EXCLUDED.tem_cobertura_fibra,
+                                                produto_ativo        = EXCLUDED.produto_ativo,
+                                                ativo                = EXCLUDED.ativo,
+                                                atualizado_em        = NOW()
                   """)
 
 
